@@ -9,8 +9,8 @@ scalacOptions ++= Seq("-deprecation", "-feature", "-language:postfixOps")
 // pmml
 libraryDependencies ++= Seq(
 	"org.jpmml" % "pmml-evaluator" % pmmlVersion,
-	"jakarta.xml.bind" % "jakarta.xml.bind-api" % "3.0.0",
-	"com.sun.xml.bind" % "jaxb-impl" % "3.0.0"
+	// "jakarta.xml.bind" % "jakarta.xml.bind-api" % "3.0.0",
+	"com.sun.xml.bind" % "jaxb-impl" % "4.0.0"
 )
 
 // scala-csv
