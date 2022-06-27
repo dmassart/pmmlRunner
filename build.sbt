@@ -3,14 +3,14 @@ version := "1.0"
 scalaVersion := "3.1.3"
 lazy val pmmlVersion = "1.6.3"
 lazy val totoVersion = "1.3.10"
+lazy val jaxbVersion = "4.0.0"
 
 scalacOptions ++= Seq("-deprecation", "-feature", "-language:postfixOps")
 
-// pmml
+// jpmml
 libraryDependencies ++= Seq(
 	"org.jpmml" % "pmml-evaluator" % pmmlVersion,
-	// "jakarta.xml.bind" % "jakarta.xml.bind-api" % "3.0.0",
-	"com.sun.xml.bind" % "jaxb-impl" % "4.0.0"
+	"com.sun.xml.bind" % "jaxb-impl" % jaxbVersion
 )
 
 // scala-csv
