@@ -1,13 +1,9 @@
 import com.github.tototoshi.csv.*
-import java.io.{File, FileInputStream}
+import java.io.File
 import java.util
-
-import org.dmg.pmml.PMML
 import org.jpmml.evaluator.*
-import org.jpmml.model.PMMLUtil
-
 import scala.jdk.CollectionConverters.*
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success, Try, Using}
 
 object PMMLRunner {
   var inputFileName: String = _
@@ -122,13 +118,9 @@ object PMMLRunner {
    * @param output_list : result list
    * @return Either Unit or an error message
    */
-  def writeOutputFile(filename: Option[String], output_list: List[List[Any]]): Either[String, Unit] = Try {
-    val f = new File(filename.getOrElse("output.txt"))
-    val writer = CSVWriter.open(f)
-    writer.writeAll(output_list)
-    writer.close
-  } match {
-    case Failure(ex) => Left(Option(ex.getMessage).map(message => s"Output File Error => $message").getOrElse("Error Writing Output File"))
-    case Success(value) => Right(value)
-  }
+  def writeOutputFile(filename: Option[String], output_list: List[List[Any]]): Either[String, Unit] =
+    Using( CSVWriter.open(File(filename.getOrElse("output.txt"))) ){ _.writeAll(output_list)} match {
+      case Failure(ex) => Left(Option(ex.getMessage).map(message => s"Output File Error => $message").getOrElse("Error Writing Output File"))
+      case Success(value) => Right(value)
+    }
 }
