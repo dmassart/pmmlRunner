@@ -10,9 +10,9 @@ import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 object PMMLRunner {
-  var evaluator: ModelEvaluator[_] = _
-  var csv_list: List[Map[String, String]] = _
-  var output: Option[String] = Option.empty[String]
+  var inputFileName: String = _
+  var pmmlFileName: String = _
+  var outputFileName: Option[String] = Option.empty[String]
 
   @main
   def main(args: String*): Unit = {
@@ -23,50 +23,35 @@ object PMMLRunner {
       for (i <- args.indices by 2) {
         args(i) match {
           case "-input" =>
-            csv_list = readCSV(args(i + 1))
+            inputFileName = args(i + 1)
           case "-output" =>
-            output = Option(args(i + 1))
-          case "-pmml" => Try( readPMML(args(i + 1)) ) match {
-            case Success(ev) => evaluator = ev
-            case Failure(ex) => warnAndExit( Option( s"PMML File Error => ${ex.getMessage}" ) )
-          }
+            outputFileName = Option(args(i + 1))
+          case "-pmml" =>
+            pmmlFileName = args(i + 1)
           case _ => warnAndExit()
         }
       }
 
     println("PMML Runner: Processing started ...")
-    /* Actual PMML handling starts here */
-
-    // prepare input data (i.e., turn csv into map)
-    val scoring_list: List[util.Map[String, FieldValue]] = csv_list.map(row => Try{
-      val activeFields: List[InputField] = evaluator.getActiveFields.asScala.toList
-      activeFields.map(field => {
-        val fieldName = field.getName
-        val fieldValue = field.prepare(row(fieldName))
-        fieldName -> fieldValue
-      }).toMap
-    } match {
-      case Failure(ex) =>
-        warnAndExit( Option(s"Input CSV File Error => ${ex.getMessage}") )
-        Map.empty[String, FieldValue].asJava
-      case Success(value) =>
-        value.asJava
-    })
-
-    // Perform scoring using JPMML
-    val regular_score_list = scoring_list.map(el => evaluator.evaluate(el).values.asScala.toList)
-
-    // Save the outputs as a CSV
-    writeOutputFile(output.getOrElse("output.txt"), regular_score_list)
-
-    /* Actual PMML handling ends here */
-    println("PMML Runner: Processing completed")
-    println(s"PMML Runner: Check results in file ${output.getOrElse("output.txt")}")
+    (for {
+      evaluator <- readPMML(pmmlFileName)
+      csv       <- readCSV(inputFileName)
+      input     <- preprocess(evaluator, csv)
+      output    <- process(evaluator, input)
+      _         <- writeOutputFile(outputFileName, output)
+    } yield {}) match {
+      case Left(errorMessage) =>
+        warnAndExit(Option(errorMessage))
+      case Right(_) =>
+        println("PMML Runner: Processing completed")
+        println(s"PMML Runner: Check results in file ${outputFileName.getOrElse("output.txt")}")
+    }
   }
 
   /**
    * Display error message and quit
-   * @param message: The message to display
+   *
+   * @param message : The message to display
    */
   def warnAndExit(message: Option[String] = None): Unit = {
     message match {
@@ -80,36 +65,69 @@ object PMMLRunner {
 
   /**
    * Read a PMML File and returns an evaluator
-   * @param filename: Path to PMML file
+   *
+   * @param filename : Path to PMML file
    * @return a ML model evaluator
    */
-  def readPMML(filename: String): ModelEvaluator[_] = {
+  def readPMML(filename: String): Either[String, ModelEvaluator[_]] = Try {
     val pmml: File = new File(filename)
     val builder = new LoadingModelEvaluatorBuilder()
     builder
       .load(pmml)
       .build
+  } match {
+    case Failure(ex) => Left(Option(ex.getMessage).map(message => s"PMML File Error => $message").getOrElse("PMML File Error"))
+    case Success(value) => Right(value)
   }
 
   /**
    * Read CSV with headers
-   * @param filename: Path to input CSV file
+   *
+   * @param filename : Path to input CSV file
    * @return List of Map
    */
-  def readCSV(filename: String): List[Map[String, String]] = {
+  def readCSV(filename: String): Either[String, List[Map[String, String]]] = Try {
     val reader = CSVReader.open(new File(filename))
     reader.allWithHeaders()
+  } match {
+    case Failure(ex) => Left(Option(ex.getMessage).map(message => s"CSV File Error => $message").getOrElse("CSV File Error"))
+    case Success(value) => Right(value)
+  }
+
+  def preprocess(evaluator: ModelEvaluator[_], csv_list: List[Map[String, String]]): Either[String, List[util.Map[String, FieldValue]]] = Try {
+    csv_list.map(row => {
+      val activeFields: List[InputField] = evaluator.getActiveFields.asScala.toList
+      activeFields.map(field => {
+        val fieldName = field.getName
+        val fieldValue = field.prepare(row(fieldName))
+        fieldName -> fieldValue
+      }).toMap.asJava
+    })
+  } match {
+    case Failure(ex) => Left(Option(ex.getMessage).map(message => s"CSV File Error => $message").getOrElse("CSV File Error"))
+    case Success(value) => Right(value)
+  }
+
+  def process(evaluator: ModelEvaluator[_], processed: List[util.Map[String, FieldValue]]): Either[String, List[List[Any]]] = Try {
+    processed.map(el => evaluator.evaluate(el).values.asScala.toList)
+  } match {
+    case Failure(ex) => Left(Option(ex.getMessage).map(message => s"Evaluation Error => $message").getOrElse("Error Evaluating Record"))
+    case Success(value) => Right(value)
   }
 
   /**
    * Write output in file
-   * @param filename: Path to output file
-   * @param output_list: result list
+   *
+   * @param filename    : Path to output file
+   * @param output_list : result list
    */
-  def writeOutputFile(filename: String, output_list: List[List[Any]]): Unit = {
-    val f = new File(filename)
+  def writeOutputFile(filename: Option[String], output_list: List[List[Any]]): Either[String, Unit] = Try {
+    val f = new File(filename.getOrElse("output.txt"))
     val writer = CSVWriter.open(f)
     writer.writeAll(output_list)
     writer.close
+  } match {
+    case Failure(ex) => Left(Option(ex.getMessage).map(message => s"Output File Error => $message").getOrElse("Error Writing Output File"))
+    case Success(value) => Right(value)
   }
 }
