@@ -63,11 +63,11 @@ object PMMLRunner {
     System.exit(-1)
   }
 
-  /**
-   * Read a PMML File and returns an evaluator
+   /**
+   * Read a PMML File and returns either an evaluator or a error message
    *
    * @param filename : Path to PMML file
-   * @return a ML model evaluator
+   * @return Either an ML model evaluator or an error message
    */
   def readPMML(filename: String): Either[String, ModelEvaluator[_]] = Try {
     val pmml: File = new File(filename)
@@ -80,11 +80,11 @@ object PMMLRunner {
     case Success(value) => Right(value)
   }
 
-  /**
+   /**
    * Read CSV with headers
    *
    * @param filename : Path to input CSV file
-   * @return List of Map
+   * @return Either the CSV rows as a List of Maps or an error message
    */
   def readCSV(filename: String): Either[String, List[Map[String, String]]] = Try {
     val reader = CSVReader.open(new File(filename))
@@ -115,11 +115,12 @@ object PMMLRunner {
     case Success(value) => Right(value)
   }
 
-  /**
-   * Write output in file
+   /**
+   * Write output to a file
    *
    * @param filename    : Path to output file
    * @param output_list : result list
+   * @return Either Unit or an error message
    */
   def writeOutputFile(filename: Option[String], output_list: List[List[Any]]): Either[String, Unit] = Try {
     val f = new File(filename.getOrElse("output.txt"))
