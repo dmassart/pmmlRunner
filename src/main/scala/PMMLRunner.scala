@@ -66,8 +66,8 @@ object PMMLRunner {
    * @return Either an ML model evaluator or an error message
    */
   def readPMML(filename: String): Either[String, ModelEvaluator[_]] = Try {
-    val pmml: File = new File(filename)
-    val builder = new LoadingModelEvaluatorBuilder()
+    val pmml: File = File(filename)
+    val builder = LoadingModelEvaluatorBuilder()
     builder
       .load(pmml)
       .build
@@ -83,7 +83,7 @@ object PMMLRunner {
    * @return Either the CSV rows as a List of Maps or an error message
    */
   def readCSV(filename: String): Either[String, List[Map[String, String]]] = Try {
-    val reader = CSVReader.open(new File(filename))
+    val reader = CSVReader.open(File(filename))
     reader.allWithHeaders()
   } match {
     case Failure(ex) => Left(Option(ex.getMessage).map(message => s"CSV File Error => $message").getOrElse("CSV File Error"))
