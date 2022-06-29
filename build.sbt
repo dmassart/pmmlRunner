@@ -9,14 +9,14 @@ scalacOptions ++= Seq("-deprecation", "-feature", "-language:postfixOps")
 
 libraryDependencies ++= Seq(
   "com.github.tototoshi" %% "scala-csv" % totoVersion,
-	"org.jpmml" % "pmml-evaluator" % pmmlVersion,
-	"com.sun.xml.bind" % "jaxb-impl" % jaxbVersion
+  "org.jpmml" % "pmml-evaluator" % pmmlVersion,
+  "com.sun.xml.bind" % "jaxb-impl" % jaxbVersion
 )
 
 assembly / mainClass := Some( "main" )
 assembly / assemblyJarName := "pmmlRunner.jar"
 assembly / assemblyMergeStrategy := {
   case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
-  case PathList("reference.conf") => MergeStrategy.concat
-  case _ => MergeStrategy.first
+  case PathList("reference.conf")          => MergeStrategy.concat
+  case _                                   => MergeStrategy.first
 }
