@@ -1,9 +1,9 @@
 name := """pmmlRunner"""
 version := "1.0"
-scalaVersion := "3.1.3"
+scalaVersion := "3.2.0"
 lazy val totoVersion = "1.3.10"
-lazy val pmmlVersion = "1.6.3"
-lazy val jaxbVersion = "4.0.0"
+lazy val pmmlVersion = "1.6.4"
+lazy val jaxbVersion = "4.0.1"
 
 scalacOptions ++= Seq("-deprecation", "-feature", "-language:postfixOps")
 
