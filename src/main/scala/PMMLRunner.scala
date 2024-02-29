@@ -1,13 +1,16 @@
 import com.github.tototoshi.csv.*
 import java.io.File
 import java.util
+
 import org.jpmml.evaluator.*
+
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try, Using}
 
 object PMMLRunner {
-  var inputFileName: String = _
-  var pmmlFileName: String = _
+  var inputFileName: String = uninitialized
+  var pmmlFileName: String = uninitialized
   var outputFileName: Option[String] = Option.empty[String]
 
   @main
@@ -65,7 +68,7 @@ object PMMLRunner {
    * @param filename : Path to PMML file
    * @return Either an ML model evaluator or an error message
    */
-  def readPMML(filename: String): Either[String, ModelEvaluator[_]] = Try {
+  def readPMML(filename: String): Either[String, ModelEvaluator[?]] = Try {
     val pmml: File = File(filename)
     val builder = LoadingModelEvaluatorBuilder()
     builder
@@ -90,7 +93,7 @@ object PMMLRunner {
     case Success(value) => Right(value)
   }
 
-  def preprocess(evaluator: ModelEvaluator[_], csv_list: List[Map[String, String]]): Either[String, List[util.Map[String, FieldValue]]] = Try {
+  def preprocess(evaluator: ModelEvaluator[?], csv_list: List[Map[String, String]]): Either[String, List[util.Map[String, FieldValue]]] = Try {
     csv_list.map(row => {
       val activeFields: List[InputField] = evaluator.getActiveFields.asScala.toList
       activeFields.map(field => {
@@ -104,7 +107,7 @@ object PMMLRunner {
     case Success(value) => Right(value)
   }
 
-  def process(evaluator: ModelEvaluator[_], processed: List[util.Map[String, FieldValue]]): Either[String, List[List[Any]]] = Try {
+  def process(evaluator: ModelEvaluator[?], processed: List[util.Map[String, FieldValue]]): Either[String, List[List[Any]]] = Try {
     processed.map(el => evaluator.evaluate(el).values.asScala.toList)
   } match {
     case Failure(ex) => Left(Option(ex.getMessage).map(message => s"Evaluation Error => $message").getOrElse("Error Evaluating Record"))
